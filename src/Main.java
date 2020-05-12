@@ -4,6 +4,8 @@ public class Main {
     public static Database database = new Database("database");
 
     public static void main(String[] args) {
+        InterfaceManager.getInstance().showInterface();
+
         Statistics statistics = new Statistics();
 
         Set<String> disks = statistics.getDisks();

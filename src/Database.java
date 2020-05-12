@@ -11,7 +11,7 @@ public class Database {
         try {
             this.connection = DriverManager.getConnection(String.format("jdbc:sqlite:%s.db", name));
 
-            logger.log(Level.INFO, "Connection successfully opened.");
+            logger.log(Level.INFO, "Connection has been successfully opened.");
         } catch (SQLException exception) {
             logger.log(Level.SEVERE, exception.getMessage());
         }
