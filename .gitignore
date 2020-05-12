@@ -1,6 +1,5 @@
 .DS_Store
 out
-libs
 
 # Database files
 *.db
