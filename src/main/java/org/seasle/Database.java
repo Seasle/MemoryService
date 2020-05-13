@@ -1,6 +1,7 @@
-import javax.swing.plaf.nimbus.State;
-import java.net.URL;
+package org.seasle;
+
 import java.sql.*;
+import java.net.URL;
 import java.time.Instant;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -11,8 +12,8 @@ public class Database {
 
     public Database(String name) {
         try {
-            URL path = getClass().getResource(String.format("%s.db", name));
-            this.connection = DriverManager.getConnection(String.format("jdbc:sqlite:%s", path));
+            URL path = getClass().getResource(String.format("/%s.db", name));
+            this.connection = DriverManager.getConnection(String.format("jdbc:sqlite::resource:%s", path));
 
             logger.log(Level.INFO, "Connection has been successfully opened.");
         } catch (SQLException exception) {

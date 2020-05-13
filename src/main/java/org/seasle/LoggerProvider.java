@@ -1,3 +1,5 @@
+package org.seasle;
+
 import java.util.Date;
 import java.util.logging.*;
 import java.io.IOException;

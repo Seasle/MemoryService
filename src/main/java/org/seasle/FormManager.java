@@ -1,3 +1,5 @@
+package org.seasle;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -14,7 +16,7 @@ public class FormManager {
 
     private final Logger logger = LoggerProvider.getInstance();
     private final String title = "Интерфейс";
-    private Form form = new Form();
+    private final Form form = new Form();
     private JFrame frame = null;
     private Database database = null;
 
@@ -31,7 +33,7 @@ public class FormManager {
         SystemTray tray = SystemTray.getSystemTray();
         try {
             ImageIcon icon = new ImageIcon(
-                getClass().getResource("icon_16.png")
+                getClass().getResource("/icon_16.png")
             );
             TrayIcon trayIcon = new TrayIcon(icon.getImage());
 
@@ -63,7 +65,7 @@ public class FormManager {
 
     private void initInterface() {
         ImageIcon icon = new ImageIcon(
-            getClass().getResource("icon_32.png")
+            getClass().getResource("/icon_32.png")
         );
 
         this.frame = new JFrame(this.title);

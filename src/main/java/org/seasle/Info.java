@@ -1,3 +1,5 @@
+package org.seasle;
+
 import java.io.File;
 
 public class Info {

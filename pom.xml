@@ -8,6 +8,13 @@
     <artifactId>MemoryService</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <name>MemoryService</name>
+
+    <properties>
+        <maven.compiler.source>14</maven.compiler.source>
+        <maven.compiler.target>14</maven.compiler.target>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.xerial</groupId>

@@ -1,3 +1,5 @@
+package org.seasle;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
@@ -16,7 +18,7 @@ public class Form {
     public void fillTable(List<Object[]> data) {
         TableColumnModel columnModel = table.getColumnModel();
         int count = columnModel.getColumnCount();
-        
+
         Object[] columns = new Object[count];
         for (int index = 0; index < count; index++) {
             columns[index] = columnModel.getColumn(index).getHeaderValue();
