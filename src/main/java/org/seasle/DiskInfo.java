@@ -2,14 +2,14 @@ package org.seasle;
 
 import java.io.File;
 
-public class Info {
+public class DiskInfo {
     public String name;
     public Long total;
     public Long free;
     public Long usable;
     public Long used;
 
-    public Info(String name, String path) {
+    public DiskInfo(String name, String path) {
         File disk = new File(path);
 
         this.name = name;

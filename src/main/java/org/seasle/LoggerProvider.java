@@ -5,8 +5,7 @@ import java.util.logging.*;
 import java.io.IOException;
 
 public class LoggerProvider {
-    private static LoggerProvider loggerProvider = new LoggerProvider();
-
+    private static final LoggerProvider loggerProvider = new LoggerProvider();
     private Logger logger = null;
 
     public LoggerProvider() {

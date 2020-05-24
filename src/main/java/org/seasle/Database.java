@@ -21,9 +21,9 @@ public class Database {
         }
     }
 
-    public ResultSet getAllData() {
+    public ResultSet getData(String name) {
         if (this.connection != null) {
-            String query = "SELECT * FROM statistics";
+            String query = String.format("SELECT total, free, usable FROM statistics WHERE name = '%s'", name);
 
             try {
                 Statement statement = connection.createStatement();
@@ -45,7 +45,7 @@ public class Database {
         }
     }
 
-    public void put(Info info) {
+    public void putData(DiskInfo info) {
         if (this.connection != null) {
             Instant timestamp = Instant.now();
             String query = String.format(

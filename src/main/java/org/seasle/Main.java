@@ -10,12 +10,13 @@ public class Main {
 
         Set<String> disks = statistics.getDisks();
         for (String disk : disks) {
-            database.put(statistics.getDiskInfo(disk));
+            database.putData(statistics.getDiskInfo(disk));
         }
 
         FormManager formManager = FormManager.getInstance();
 
         formManager.setDatabase(database);
+        formManager.setDisks(disks);
         formManager.showInterface();
     }
 
