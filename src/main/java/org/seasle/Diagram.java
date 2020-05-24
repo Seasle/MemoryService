@@ -21,7 +21,7 @@ public class Diagram {
 
             int additional = 4;
             int count = points.size() + additional;
-            double step = Math.max(5, (double) width / (count - additional - 1));
+            double step = Math.max(5, (double) width / (count - additional));
             size = (int) ((count - additional) * step);
             offset = Utils.clamp(-size + canvas.getWidth(), 0, offset);
 
@@ -118,6 +118,7 @@ public class Diagram {
 
     public void draw(List<Double> points) {
         this.points = points;
+        System.out.println(points.size());
 
         canvas.repaint();
     }

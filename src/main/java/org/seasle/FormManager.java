@@ -123,9 +123,7 @@ public class FormManager {
 
             long maxBytes = Collections.max(totalList);
             for (Long usedBytes : usedList) {
-                for (int i = 0; i < 20; i++) {
-                    values.add((double) usedBytes / maxBytes);
-                }
+                values.add((double) usedBytes / maxBytes);
             }
 
             diagram.draw(values);
