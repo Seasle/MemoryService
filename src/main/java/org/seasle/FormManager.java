@@ -6,6 +6,10 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.ZoneId;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
@@ -81,6 +85,14 @@ public class FormManager {
             this.updateInterface();
         });
 
+        form.fromDatePicker.addDateChangeListener(event -> {
+            this.updateInterface();
+        });
+
+        form.toDatePicker.addDateChangeListener(event -> {
+            this.updateInterface();
+        });
+
         ImageIcon icon = new ImageIcon(
             getClass().getResource("/icon_32.png")
         );
@@ -110,7 +122,21 @@ public class FormManager {
         List<Long> totalList = new ArrayList<>();
         List<Long> usedList = new ArrayList<>();
         List<Double> values = new ArrayList<>();
-        ResultSet resultSet = this.database.getData(this.disks.toArray()[form.comboBox.getSelectedIndex()].toString());
+        LocalDate fromDate = form.fromDatePicker.getDate();
+        LocalDate toDate = form.toDatePicker.getDate();
+        LocalDateTime from = LocalDateTime.of(
+            fromDate != null ? fromDate : LocalDate.of(1970, 1, 1),
+            LocalTime.of(0, 0, 0)
+        );
+        LocalDateTime to = LocalDateTime.of(
+            toDate != null ? toDate : LocalDate.of(9999, 12, 31),
+            LocalTime.of(23, 59, 59)
+        );
+        ResultSet resultSet = this.database.getData(
+            this.disks.toArray()[form.comboBox.getSelectedIndex()].toString(),
+            from.atZone(ZoneId.systemDefault()).toEpochSecond(),
+            to.atZone(ZoneId.systemDefault()).toEpochSecond()
+        );
 
         try {
             while(resultSet.next()) {
@@ -121,12 +147,17 @@ public class FormManager {
                 usedList.add(total - usable);
             }
 
-            long maxBytes = Collections.max(totalList);
-            for (Long usedBytes : usedList) {
-                values.add((double) usedBytes / maxBytes);
+            if (totalList.size() > 0) {
+                long maxBytes = Collections.max(totalList);
+                for (Long usedBytes : usedList) {
+                    values.add((double) usedBytes / maxBytes);
+                }
+
+                diagram.draw(values);
+            } else {
+                diagram.clear();
             }
 
-            diagram.draw(values);
         } catch (SQLException exception) {
             logger.log(Level.SEVERE, exception.getMessage());
         }

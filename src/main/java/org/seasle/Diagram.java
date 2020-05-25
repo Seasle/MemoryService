@@ -34,24 +34,26 @@ public class Diagram {
             graphics2D.fillRect(0, 0, width, height);
 
             // Draw diagram
-            int[] xPoints = new int[count];
-            int[] yPoints = new int[count];
+            if (points.size() > 0) {
+                int[] xPoints = new int[count];
+                int[] yPoints = new int[count];
 
-            xPoints[0] = 0;
-            yPoints[0] = height;
-            xPoints[1] = 0;
-            yPoints[1] = (int) (height - points.get(0) * height);
-            for (int index = 0; index < count - additional; index++) {
-                xPoints[index + 2] = (int) (index * step) + offset;
-                yPoints[index + 2] = (int) (height - points.get(index) * height);
+                xPoints[0] = 0;
+                yPoints[0] = height;
+                xPoints[1] = 0;
+                yPoints[1] = (int) (height - points.get(0) * height);
+                for (int index = 0; index < count - additional; index++) {
+                    xPoints[index + 2] = (int) (index * step) + offset;
+                    yPoints[index + 2] = (int) (height - points.get(index) * height);
+                }
+                xPoints[count - 2] = width;
+                yPoints[count - 2] = (int) (height - points.get(points.size() - 1) * height);
+                xPoints[count - 1] = width;
+                yPoints[count - 1] = height;
+
+                graphics2D.setColor(new Color(53, 216, 222));
+                graphics2D.fillPolygon(xPoints, yPoints, count);
             }
-            xPoints[count - 2] = width;
-            yPoints[count - 2] = (int) (height - points.get(points.size() - 1) * height);
-            xPoints[count - 1] = width;
-            yPoints[count - 1] = height;
-
-            graphics2D.setColor(new Color(53, 216, 222));
-            graphics2D.fillPolygon(xPoints, yPoints, count);
 
             // Draw grid
             int columns = (int) Math.ceil(width / 10.0);
@@ -118,7 +120,12 @@ public class Diagram {
 
     public void draw(List<Double> points) {
         this.points = points;
-        System.out.println(points.size());
+
+        canvas.repaint();
+    }
+
+    public void clear() {
+        this.points.clear();
 
         canvas.repaint();
     }
