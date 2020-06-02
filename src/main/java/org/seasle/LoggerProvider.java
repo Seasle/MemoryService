@@ -1,5 +1,9 @@
 package org.seasle;
 
+import java.io.File;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.logging.*;
 import java.io.IOException;
@@ -9,10 +13,17 @@ public class LoggerProvider {
     private Logger logger = null;
 
     public LoggerProvider() {
+        File logsDirectory = new File("logs");
+        if (!logsDirectory.exists()) {
+            logsDirectory.mkdirs();
+        }
+
         try {
             this.logger = Logger.getLogger("logger");
 
-            FileHandler fileHandler = new FileHandler("logs.log", true);
+            DateFormatter dateFormatter = DateFormatter.getInstance();
+            String filename = String.format("logs/%s.log", dateFormatter.format(new Date()));
+            FileHandler fileHandler = new FileHandler(filename, true);
             SimpleFormatter simpleFormatter = new SimpleFormatter() {
                 private static final String format = "[%1$tF %1$tT] [%2$s] %3$s%n";
 

@@ -2,25 +2,21 @@ package org.seasle;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.ZoneId;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.LocalDateTime;
-import java.util.Set;
+import java.time.*;
+import java.util.*;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class FormManager {
     private static final FormManager formManager = new FormManager();
 
     private final Logger logger = LoggerProvider.getInstance();
+    private final DateFormatter dateFormatter = DateFormatter.getInstance();
     private final String title = "Интерфейс";
     private final Form form = new Form();
     private final Diagram diagram = new Diagram();
@@ -81,8 +77,15 @@ public class FormManager {
     }
 
     private void initInterface() {
+        AtomicInteger selectedIndex = new AtomicInteger(form.comboBox.getSelectedIndex());
+
         form.comboBox.addActionListener(event -> {
-            this.updateInterface();
+            int currentIndex = form.comboBox.getSelectedIndex();
+            if (selectedIndex.get() != currentIndex) {
+                this.updateInterface();
+            }
+
+            selectedIndex.set(currentIndex);
         });
 
         form.fromDatePicker.addDateChangeListener(event -> {
@@ -113,15 +116,12 @@ public class FormManager {
             }
         });
 
-        form.container.add(diagram.canvas);
+        form.container.add(diagram.panel);
 
         logger.log(Level.INFO, "Interface has been successfully created.");
     }
 
     private void updateInterface() {
-        List<Long> totalList = new ArrayList<>();
-        List<Long> usedList = new ArrayList<>();
-        List<Double> values = new ArrayList<>();
         LocalDate fromDate = form.fromDatePicker.getDate();
         LocalDate toDate = form.toDatePicker.getDate();
         LocalDateTime from = LocalDateTime.of(
@@ -139,21 +139,31 @@ public class FormManager {
         );
 
         try {
+            List<Long> totalList = new ArrayList<>();
+            List<Long> usedList = new ArrayList<>();
+            List<Object> labels = new ArrayList<>();
+            List<Object> points = new ArrayList<>();
+
             while(resultSet.next()) {
                 long total = resultSet.getLong("total");
                 long usable = resultSet.getLong("usable");
 
                 totalList.add(total);
                 usedList.add(total - usable);
+                labels.add(dateFormatter.format(new Date(resultSet.getLong("timestamp") * 1000)));
             }
 
             if (totalList.size() > 0) {
+                int count = totalList.size();
                 long maxBytes = Collections.max(totalList);
-                for (Long usedBytes : usedList) {
-                    values.add((double) usedBytes / maxBytes);
+
+                for (int index = 0; index < count; index++) {
+                    points.add((double) usedList.get(index) / maxBytes);
                 }
 
-                diagram.draw(values);
+                diagram.setLabels(labels);
+                diagram.setPoints(points);
+                diagram.draw();
             } else {
                 diagram.clear();
             }

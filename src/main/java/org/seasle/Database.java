@@ -23,7 +23,7 @@ public class Database {
 
     public ResultSet getData(String diskName, Long from, Long to) {
         if (this.connection != null) {
-            String query = String.format("SELECT total, free, usable FROM statistics WHERE name = '%s' AND (timestamp BETWEEN %d AND %d)", diskName, from, to);
+            String query = String.format("SELECT total, free, usable, timestamp FROM statistics WHERE name = '%s' AND (timestamp BETWEEN %d AND %d) ORDER BY timestamp", diskName, from, to);
 
             try {
                 Statement statement = connection.createStatement();
