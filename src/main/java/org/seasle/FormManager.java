@@ -15,33 +15,26 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class FormManager {
     private static final FormManager formManager = new FormManager();
 
+    // region Variables
     private final Logger logger = LoggerProvider.getInstance();
     private final DateFormatter dateFormatter = DateFormatter.getInstance();
-    private final String title = "Интерфейс";
+    private final String title = "Объем дискового пространства";
     private final Form form = new Form();
     private final Diagram diagram = new Diagram();
     private JFrame frame = null;
     private Database database = null;
     private Set<String> disks = null;
+    private boolean canUpdate = false;
+    // endregion
 
+    // region Constructor
     public FormManager() {
         this.initTray();
         this.initInterface();
     }
+    // endregion
 
-    public void setDatabase(Database database) {
-        this.database = database;
-    }
-
-    public void setDisks(Set<String> disks) {
-        this.disks = disks;
-
-        form.comboBox.removeAllItems();
-        for (String disk : disks) {
-            form.comboBox.addItem(String.format("Диск %s", disk));
-        }
-    }
-
+    // region Private methods
     private void initTray() {
         SystemTray tray = SystemTray.getSystemTray();
         try {
@@ -63,6 +56,7 @@ public class FormManager {
             });
 
             popupMenu.add(openItem);
+            popupMenu.addSeparator();
             popupMenu.add(exitItem);
 
             trayIcon.setToolTip(this.title);
@@ -122,62 +116,98 @@ public class FormManager {
     }
 
     private void updateInterface() {
-        LocalDate fromDate = form.fromDatePicker.getDate();
-        LocalDate toDate = form.toDatePicker.getDate();
-        LocalDateTime from = LocalDateTime.of(
-            fromDate != null ? fromDate : LocalDate.of(1970, 1, 1),
-            LocalTime.of(0, 0, 0)
-        );
-        LocalDateTime to = LocalDateTime.of(
-            toDate != null ? toDate : LocalDate.of(9999, 12, 31),
-            LocalTime.of(23, 59, 59)
-        );
-        ResultSet resultSet = this.database.getData(
-            this.disks.toArray()[form.comboBox.getSelectedIndex()].toString(),
-            from.atZone(ZoneId.systemDefault()).toEpochSecond(),
-            to.atZone(ZoneId.systemDefault()).toEpochSecond()
-        );
+        if (canUpdate) {
+            LocalDate fromDate = form.fromDatePicker.getDate();
+            LocalDate toDate = form.toDatePicker.getDate();
+            LocalDateTime from = LocalDateTime.of(
+                    fromDate != null ? fromDate : LocalDate.of(1970, 1, 1),
+                    LocalTime.of(0, 0, 0)
+            );
+            LocalDateTime to = LocalDateTime.of(
+                    toDate != null ? toDate : LocalDate.of(9999, 12, 31),
+                    LocalTime.of(23, 59, 59)
+            );
+            ResultSet resultSet = this.database.getData(
+                    this.disks.toArray()[form.comboBox.getSelectedIndex()].toString(),
+                    from.atZone(ZoneId.systemDefault()).toEpochSecond(),
+                    to.atZone(ZoneId.systemDefault()).toEpochSecond()
+            );
 
-        try {
-            List<Long> totalList = new ArrayList<>();
-            List<Long> usedList = new ArrayList<>();
-            List<Object> labels = new ArrayList<>();
-            List<Object> points = new ArrayList<>();
+            try {
+                List<Long> totalList = new ArrayList<>();
+                List<Long> usedList = new ArrayList<>();
+                List<Object> labels = new ArrayList<>();
+                List<Object> points = new ArrayList<>();
 
-            while(resultSet.next()) {
-                long total = resultSet.getLong("total");
-                long usable = resultSet.getLong("usable");
+                while (resultSet.next()) {
+                    long total = resultSet.getLong("total");
+                    long usable = resultSet.getLong("usable");
 
-                totalList.add(total);
-                usedList.add(total - usable);
-                labels.add(dateFormatter.format(new Date(resultSet.getLong("timestamp") * 1000)));
-            }
-
-            if (totalList.size() > 0) {
-                int count = totalList.size();
-                long maxBytes = Collections.max(totalList);
-
-                for (int index = 0; index < count; index++) {
-                    points.add((double) usedList.get(index) / maxBytes);
+                    totalList.add(total);
+                    usedList.add(total - usable);
+                    labels.add(dateFormatter.format(new Date(resultSet.getLong("timestamp") * 1000)));
                 }
 
-                diagram.setLabels(labels);
-                diagram.setPoints(points);
-                diagram.draw();
-            } else {
-                diagram.clear();
-            }
+                if (totalList.size() > 0) {
+                    int count = totalList.size();
+                    long maxBytes = Collections.max(totalList);
 
-        } catch (SQLException exception) {
-            logger.log(Level.SEVERE, exception.getMessage());
+                    for (int index = 0; index < count; index++) {
+                        points.add((double) usedList.get(index) / maxBytes);
+                    }
+
+                    diagram.setLabels(labels);
+                    diagram.setPoints(points);
+                    diagram.draw();
+                } else {
+                    diagram.clear();
+                }
+
+            } catch (SQLException exception) {
+                logger.log(Level.SEVERE, exception.getMessage());
+            }
+        }
+    }
+    // endregion
+
+    // region Public methods
+    public void setDatabase(Database database) {
+        this.database = database;
+    }
+
+    public void setDisks(Set<String> disks) {
+        this.disks = disks;
+
+        form.comboBox.removeAllItems();
+        for (String disk : disks) {
+            form.comboBox.addItem(String.format("Диск %s", disk));
         }
     }
 
     public void showInterface() {
         this.frame.setVisible(true);
 
+        LocalDate today = LocalDate.now();
+        if (form.fromDatePicker.getDate() == null) {
+            canUpdate = false;
+
+            form.fromDatePicker.setDate(today.withDayOfMonth(1));
+        }
+        if (form.toDatePicker.getDate() == null) {
+            canUpdate = false;
+
+            form.toDatePicker.setDate(YearMonth.from(today).atEndOfMonth());
+        }
+
+        if (!canUpdate) {
+            canUpdate = true;
+
+            this.updateInterface();
+        }
+
         logger.log(Level.INFO, "Interface has been opened.");
     }
+    // endregion
 
     public static FormManager getInstance() {
         return formManager;
