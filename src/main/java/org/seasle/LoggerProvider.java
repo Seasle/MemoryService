@@ -40,6 +40,7 @@ public class LoggerProvider {
 
             fileHandler.setFormatter(simpleFormatter);
             logger.addHandler(fileHandler);
+            logger.setFilter(record -> record.getLevel() != Level.INFO);
         } catch (IOException exception) {
             exception.printStackTrace();
 
