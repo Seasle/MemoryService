@@ -3,11 +3,13 @@ package org.seasle;
 import javax.swing.JPanel;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.AffineTransform;
 import java.util.*;
 import java.util.List;
 
 public class Diagram {
     // region Variables
+    private List<Object> marks = new ArrayList<>();
     private List<Object> labels = new ArrayList<>();
     private List<Object> points = new ArrayList<>();
     private final List<Object> keys = new ArrayList<>();
@@ -21,6 +23,7 @@ public class Diagram {
         new Color(227, 185, 57)
     };
 
+    private final int panelWidth = 75;
     private double minStep = 0.0;
     private int width = 0;
     private int height = 0;
@@ -39,8 +42,11 @@ public class Diagram {
             Graphics2D graphics2D = (Graphics2D) graphics;
 
             if (keys.size() > 0) {
-                width = getWidth();
+                width = getWidth() - panelWidth;
                 height = getHeight();
+
+                AffineTransform state = graphics2D.getTransform();
+                graphics2D.translate(panelWidth, 0);
 
                 setupAntialiasing(graphics2D);
                 setupFont(graphics2D);
@@ -60,6 +66,10 @@ public class Diagram {
 
                 drawGrid(graphics2D);
                 drawScroll(graphics2D);
+
+                graphics2D.setTransform(state);
+
+                drawMarks(graphics2D);
             } else {
                 setupAntialiasing(graphics2D);
                 clearCanvas(graphics2D);
@@ -71,7 +81,7 @@ public class Diagram {
 
     // region Constructor
     public Diagram() {
-        MouseTracker mouseTracker = new MouseTracker(panel);
+        Point pressed = new Point(0, 0);
 
         panel.setCursor(new Cursor(Cursor.W_RESIZE_CURSOR));
 
@@ -80,6 +90,7 @@ public class Diagram {
             public void mousePressed(MouseEvent event) {
                 super.mousePressed(event);
 
+                pressed.setLocation(event.getX(), event.getY());
                 tempOffset = offset;
             }
 
@@ -87,6 +98,7 @@ public class Diagram {
             public void mouseReleased(MouseEvent event) {
                 super.mouseReleased(event);
 
+                pressed.setLocation(0, 0);
                 tempOffset = 0;
             }
         });
@@ -96,7 +108,7 @@ public class Diagram {
             public void mouseDragged(MouseEvent event) {
                 super.mouseDragged(event);
 
-                offset = Utils.clamp(Math.min(0, -totalSize + width), 0, tempOffset + event.getX() - mouseTracker.getPressed().x);
+                offset = Utils.clamp(Math.min(0, -totalSize + width), 0, tempOffset + event.getX() - (int) pressed.getX());
                 panel.repaint();
             }
         });
@@ -128,45 +140,68 @@ public class Diagram {
         int count = points.size();
         double step = Math.max(minStep, 100.0 / (double) count);
         int size = (int) (step * count);
+        boolean needDraw = totalSize + size + offset >= 0 && totalSize + offset <= width;
 
         int tempPreviousY = 0;
 
         // Draw diagram
-        Polygon polygon = new Polygon();
-        polygon.addPoint(offset, height);
-        for (int index = 0; index < count; index++) {
-            double point = (double) points.get(index);
-            int y = (int) (height - point * height);
+        if (needDraw) {
+            Polygon polygon = new Polygon();
+            polygon.addPoint(offset, height);
+            for (int index = 0; index < count; index++) {
+                double point = (double) points.get(index);
+                int x = (int) (index * step) + offset;
+                int y = (int) (height - point * height);
 
-            if (index == 0) {
-                polygon.addPoint((int) (index * step) + offset, previousY != 0 ? previousY : y);
-            } else if (index > 1) {
-                polygon.addPoint((int) (index * step) + offset, y);
+                polygon.addPoint(x, previousY != 0 && index == 0 ? previousY : y);
+
+                if (index == count - 1) {
+                    polygon.addPoint(size + offset, y);
+
+                    tempPreviousY = y;
+                }
             }
+            polygon.addPoint(size + offset, height);
+            polygon.translate(totalSize, 0);
 
-            if (index == count - 1) {
-                polygon.addPoint(size + offset, y);
+            graphics2D.fillPolygon(polygon);
 
-                tempPreviousY = y;
-            }
+            previousY = tempPreviousY;
         }
-        polygon.addPoint(size + offset, height);
-        polygon.translate(totalSize, 0);
-
-        graphics2D.fillPolygon(polygon);
 
         // Draw label
-        FontMetrics metrics = graphics2D.getFontMetrics(graphics2D.getFont());
+        if (needDraw) {
+            FontMetrics metrics = graphics2D.getFontMetrics(graphics2D.getFont());
 
-        int textWidth = metrics.stringWidth(key.toString());
-        int labelStart = Utils.clamp(-textWidth, 10, totalSize + size - 10 + offset - textWidth);
-        int labelPosition = Utils.clamp(labelStart, totalSize + 10, totalSize + 10 + offset);
+            int textWidth = metrics.stringWidth(key.toString());
+            int labelStart = Utils.clamp(-textWidth, 10, totalSize + size - 10 + offset - textWidth);
+            int labelPosition = Utils.clamp(labelStart, totalSize + 10, totalSize + 10 + offset);
+
+            graphics2D.setColor(new Color(17, 17, 17));
+            graphics2D.drawString(key.toString(), labelPosition, height - 10);
+        }
+
+        totalSize += size;
+    }
+
+    private void drawMarks(Graphics2D graphics2D) {
+        graphics2D.setColor(new Color(255, 255, 255));
+        graphics2D.fillRect(0, 0, panelWidth, height);
 
         graphics2D.setColor(new Color(17, 17, 17));
-        graphics2D.drawString(key.toString(), labelPosition, height - 10);
+        graphics2D.fillRect(panelWidth - 2, 0, 2, height);
 
-        previousY = tempPreviousY;
-        totalSize += size;
+        FontMetrics metrics = graphics2D.getFontMetrics(graphics2D.getFont());
+        int count = marks.size();
+        int lineHeight = metrics.getHeight();
+
+        for (int index = 0; index < count; index++) {
+            Object mark = marks.get(index);
+            int x = 10;
+            int y = height - ((height - lineHeight / 2) * (index + 1) / count) + lineHeight / 2;
+
+            graphics2D.drawString(mark.toString(), x, y);
+        }
     }
 
     private void drawGrid(Graphics2D graphics2D) {
@@ -200,6 +235,10 @@ public class Diagram {
     // endregion
 
     // region Public methods
+    public void setMarks(List<Object> marks) {
+        this.marks = marks;
+    }
+
     public void setLabels(List<Object> labels) {
         this.labels = labels;
     }

@@ -136,6 +136,7 @@ public class FormManager {
             try {
                 List<Long> totalList = new ArrayList<>();
                 List<Long> usedList = new ArrayList<>();
+                List<Object> marks = new ArrayList<>();
                 List<Object> labels = new ArrayList<>();
                 List<Object> points = new ArrayList<>();
 
@@ -151,11 +152,19 @@ public class FormManager {
                 if (totalList.size() > 0) {
                     int count = totalList.size();
                     long maxBytes = Collections.max(totalList);
+                    double denominator = Math.pow(1024, 3);
+
+                    for (int index = 0 ; index <= 10; index++) {
+                        long piece = maxBytes / 10 * index;
+
+                        marks.add(String.format("%.0f GB", Math.floor(piece / denominator)));
+                    }
 
                     for (int index = 0; index < count; index++) {
                         points.add((double) usedList.get(index) / maxBytes);
                     }
 
+                    diagram.setMarks(marks);
                     diagram.setLabels(labels);
                     diagram.setPoints(points);
                     diagram.draw();
