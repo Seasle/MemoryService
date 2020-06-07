@@ -10,13 +10,28 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 public class Main {
-    public static Logger logger = LoggerProvider.getInstance();
-    public static Database database = null;
+    private static final Logger logger = LoggerProvider.getInstance();
+    private static Database database = null;
+    private static FormManager formManager = null;
 
     public static void main(String[] args) {
         if (lockInstance("MemoryService")) {
             database = new Database("database");
+            formManager = FormManager.getInstance();
 
+            formManager.setDatabase(database);
+
+            Thread thread = new Thread(Main::collectStatistics);
+            thread.start();
+
+            Runtime.getRuntime().addShutdownHook(new Thread(Main::exit));
+        } else {
+            System.exit(0);
+        }
+    }
+
+    private static void collectStatistics() {
+        while (true) {
             Statistics statistics = new Statistics();
 
             Set<String> disks = statistics.getDisks();
@@ -24,15 +39,17 @@ public class Main {
                 database.putData(statistics.getDiskInfo(disk));
             }
 
-            FormManager formManager = FormManager.getInstance();
-
-            formManager.setDatabase(database);
             formManager.setDisks(disks);
-            formManager.showInterface();
 
-            Runtime.getRuntime().addShutdownHook(new Thread(Main::exit));
-        } else {
-            System.exit(0);
+            if (formManager.isVisible()) {
+                formManager.updateInterface();
+            }
+
+            try {
+                Thread.sleep(60 * 1000);
+            } catch (InterruptedException exception) {
+                exception.printStackTrace();
+            }
         }
     }
 
