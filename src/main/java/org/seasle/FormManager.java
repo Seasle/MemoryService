@@ -29,8 +29,8 @@ public class FormManager {
 
     // region Constructor
     public FormManager() {
-        this.initTray();
-        this.initInterface();
+        initTray();
+        initInterface();
     }
     // endregion
 
@@ -48,7 +48,7 @@ public class FormManager {
             MenuItem exitItem = new MenuItem("Выход");
 
             openItem.addActionListener(event -> {
-                this.showInterface();
+                showInterface();
             });
 
             exitItem.addActionListener(event -> {
@@ -59,7 +59,7 @@ public class FormManager {
             popupMenu.addSeparator();
             popupMenu.add(exitItem);
 
-            trayIcon.setToolTip(this.title);
+            trayIcon.setToolTip(title);
             trayIcon.setPopupMenu(popupMenu);
 
             tray.add(trayIcon);
@@ -76,32 +76,32 @@ public class FormManager {
         form.comboBox.addActionListener(event -> {
             int currentIndex = form.comboBox.getSelectedIndex();
             if (selectedIndex.get() != currentIndex) {
-                this.updateInterface();
+                updateInterface();
             }
 
             selectedIndex.set(currentIndex);
         });
 
         form.fromDatePicker.addDateChangeListener(event -> {
-            this.updateInterface();
+            updateInterface();
         });
 
         form.toDatePicker.addDateChangeListener(event -> {
-            this.updateInterface();
+            updateInterface();
         });
 
         ImageIcon icon = new ImageIcon(
             getClass().getResource("/icon_32.png")
         );
 
-        this.frame = new JFrame(this.title);
+        frame = new JFrame(title);
 
-        this.frame.setIconImage(icon.getImage());
-        this.frame.setContentPane(form.contentPane);
-        this.frame.setSize(600, 400);
-        this.frame.setLocationRelativeTo(null);
-        this.frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
-        this.frame.addWindowListener(new WindowAdapter() {
+        frame.setIconImage(icon.getImage());
+        frame.setContentPane(form.contentPane);
+        frame.setSize(600, 400);
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        frame.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent event) {
                 super.windowClosing(event);
@@ -114,8 +114,55 @@ public class FormManager {
 
         logger.log(Level.INFO, "Interface has been successfully created.");
     }
+    // endregion
 
-    private void updateInterface() {
+    // region Public methods
+    public void setDatabase(Database database) {
+        this.database = database;
+    }
+
+    public void setDisks(Set<String> disks) {
+        this.disks = disks;
+        canUpdate = false;
+
+        int selectedIndex = form.comboBox.getSelectedIndex();
+
+        form.comboBox.removeAllItems();
+        for (String disk : disks) {
+            form.comboBox.addItem(String.format("Диск %s", disk));
+        }
+        if (selectedIndex >= 0) {
+            form.comboBox.setSelectedIndex(selectedIndex);
+        }
+
+        canUpdate = true;
+    }
+
+    public void showInterface() {
+        frame.setVisible(true);
+
+        LocalDate today = LocalDate.now();
+        if (form.fromDatePicker.getDate() == null) {
+            canUpdate = false;
+
+            form.fromDatePicker.setDate(today.withDayOfMonth(1));
+        }
+        if (form.toDatePicker.getDate() == null) {
+            canUpdate = false;
+
+            form.toDatePicker.setDate(YearMonth.from(today).atEndOfMonth());
+        }
+
+        if (!canUpdate) {
+            canUpdate = true;
+
+            updateInterface();
+        }
+
+        logger.log(Level.INFO, "Interface has been opened.");
+    }
+
+    public void updateInterface() {
         if (canUpdate) {
             LocalDate fromDate = form.fromDatePicker.getDate();
             LocalDate toDate = form.toDatePicker.getDate();
@@ -127,8 +174,8 @@ public class FormManager {
                     toDate != null ? toDate : LocalDate.of(9999, 12, 31),
                     LocalTime.of(23, 59, 59)
             );
-            ResultSet resultSet = this.database.getData(
-                    this.disks.toArray()[form.comboBox.getSelectedIndex()].toString(),
+            ResultSet resultSet = database.getData(
+                    disks.toArray()[form.comboBox.getSelectedIndex()].toString(),
                     from.atZone(ZoneId.systemDefault()).toEpochSecond(),
                     to.atZone(ZoneId.systemDefault()).toEpochSecond()
             );
@@ -177,44 +224,9 @@ public class FormManager {
             }
         }
     }
-    // endregion
 
-    // region Public methods
-    public void setDatabase(Database database) {
-        this.database = database;
-    }
-
-    public void setDisks(Set<String> disks) {
-        this.disks = disks;
-
-        form.comboBox.removeAllItems();
-        for (String disk : disks) {
-            form.comboBox.addItem(String.format("Диск %s", disk));
-        }
-    }
-
-    public void showInterface() {
-        this.frame.setVisible(true);
-
-        LocalDate today = LocalDate.now();
-        if (form.fromDatePicker.getDate() == null) {
-            canUpdate = false;
-
-            form.fromDatePicker.setDate(today.withDayOfMonth(1));
-        }
-        if (form.toDatePicker.getDate() == null) {
-            canUpdate = false;
-
-            form.toDatePicker.setDate(YearMonth.from(today).atEndOfMonth());
-        }
-
-        if (!canUpdate) {
-            canUpdate = true;
-
-            this.updateInterface();
-        }
-
-        logger.log(Level.INFO, "Interface has been opened.");
+    public boolean isVisible() {
+        return frame.isVisible();
     }
     // endregion
 
