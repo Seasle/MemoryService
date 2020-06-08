@@ -3,7 +3,6 @@ package org.seasle;
 import javax.swing.JPanel;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.AffineTransform;
 import java.util.*;
 import java.util.List;
 
@@ -21,7 +20,6 @@ class DiagramRange {
 
 public class Diagram {
     // region Variables
-    private List<Object> marks = new ArrayList<>();
     private List<Object> labels = new ArrayList<>();
     private List<Object> points = new ArrayList<>();
     private final List<Object> keys = new ArrayList<>();
@@ -200,13 +198,19 @@ public class Diagram {
 
                 if (index == count - 1) {
                     polygon.addPoint(size + offset, y);
-                    ranges.add(new DiagramRange(totalSize + previousVertex, totalSize + polygon.xpoints[polygon.npoints - 1], totalCount + index));
+
+                    int currentVertex = polygon.xpoints[polygon.npoints - 1];
+                    int difference = currentVertex - previousVertex;
+                    ranges.add(new DiagramRange(totalSize + previousVertex - difference / 2, totalSize + currentVertex - difference / 2, totalCount + index));
 
                     tempPreviousY = y;
+                    previousVertex = currentVertex - difference / 2;
                 }
             }
             polygon.addPoint(size + offset, height);
             polygon.translate(totalSize, 0);
+
+            ranges.add(new DiagramRange(totalSize + previousVertex, totalSize + polygon.xpoints[polygon.npoints - 1], totalCount + count - 1));
 
             graphics2D.fillPolygon(polygon);
 
@@ -282,8 +286,8 @@ public class Diagram {
     }
 
     public int getPointIndex() {
-        if (this.currentRange != null) {
-            return this.currentRange.index - 1;
+        if (currentRange != null) {
+            return currentRange.index - 1;
         } else {
             return -1;
         }

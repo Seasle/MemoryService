@@ -126,15 +126,19 @@ public class FormManager {
             public void mouseMoved(MouseEvent event) {
                 super.mouseMoved(event);
 
-                int index = diagram.getPointIndex();
-                if (index >= 0 && index < points.size()) {
-                    Object point = usedList.get(index);
+                try {
+                    int index = diagram.getPointIndex();
+                    if (index >= 0 && index < points.size()) {
+                        Object point = usedList.get(index);
 
-                    form.dateLabel.setText(timeLabels.get(index).toString());
-                    form.usedLabel.setText(String.format("Использовано: %.2f GB", (long) point / denominator));
-                } else {
-                    form.dateLabel.setText("Наведите на график");
-                    form.usedLabel.setText("Наведите на график");
+                        form.dateLabel.setText(timeLabels.get(index).toString());
+                        form.usedLabel.setText(String.format("Использовано: %.2f GB", (long) point / denominator));
+                    } else {
+                        form.dateLabel.setText("Наведите на график");
+                        form.usedLabel.setText("Наведите на график");
+                    }
+                } catch (Exception exception) {
+                    logger.log(Level.WARNING, exception.getMessage());
                 }
             }
         });
