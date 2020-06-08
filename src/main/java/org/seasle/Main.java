@@ -24,6 +24,8 @@ public class Main {
             Thread thread = new Thread(Main::collectStatistics);
             thread.start();
 
+            formManager.showInterface();
+
             Runtime.getRuntime().addShutdownHook(new Thread(Main::exit));
         } else {
             System.exit(0);
@@ -38,8 +40,6 @@ public class Main {
             for (String disk : disks) {
                 database.putData(statistics.getDiskInfo(disk));
             }
-
-            formManager.setDisks(disks);
 
             if (formManager.isVisible()) {
                 formManager.updateInterface();

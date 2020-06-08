@@ -1,9 +1,6 @@
 package org.seasle;
 
 import java.io.File;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneOffset;
 import java.util.Date;
 import java.util.logging.*;
 import java.io.IOException;
@@ -21,8 +18,8 @@ public class LoggerProvider {
         try {
             this.logger = Logger.getLogger("logger");
 
-            DateFormatter dateFormatter = DateFormatter.getInstance();
-            String filename = String.format("logs/%s.log", dateFormatter.format(new Date()));
+            Formatter dateFormatter = Formatter.getInstance();
+            String filename = String.format("logs/%s.log", dateFormatter.formatDate(new Date()));
             FileHandler fileHandler = new FileHandler(filename, true);
             SimpleFormatter simpleFormatter = new SimpleFormatter() {
                 private static final String format = "[%1$tF %1$tT] [%2$s] %3$s%n";

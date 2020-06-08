@@ -16,15 +16,26 @@ public class FormManager {
     private static final FormManager formManager = new FormManager();
 
     // region Variables
-    private final Logger logger = LoggerProvider.getInstance();
-    private final DateFormatter dateFormatter = DateFormatter.getInstance();
     private final String title = "Объем дискового пространства";
+
+    private final Logger logger = LoggerProvider.getInstance();
+    private final Formatter formatter = Formatter.getInstance();
+
     private final Form form = new Form();
     private final Diagram diagram = new Diagram();
+
+    private final List<Long> totalList = new ArrayList<>();
+    private final List<Long> usedList = new ArrayList<>();
+    private final List<Object> timeLabels = new ArrayList<>();
+    private final List<Object> dateLabels = new ArrayList<>();
+    private final List<Object> points = new ArrayList<>();
+
+    private final double denominator = Math.pow(1024, 3);
     private JFrame frame = null;
     private Database database = null;
     private Set<String> disks = null;
     private boolean canUpdate = false;
+    private long maxBytes = 0;
     // endregion
 
     // region Constructor
@@ -110,6 +121,24 @@ public class FormManager {
             }
         });
 
+        diagram.panel.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent event) {
+                super.mouseMoved(event);
+
+                int index = diagram.getPointIndex();
+                if (index >= 0 && index < points.size()) {
+                    Object point = usedList.get(index);
+
+                    form.dateLabel.setText(timeLabels.get(index).toString());
+                    form.usedLabel.setText(String.format("Использовано: %.2f GB", (long) point / denominator));
+                } else {
+                    form.dateLabel.setText("Наведите на график");
+                    form.usedLabel.setText("Наведите на график");
+                }
+            }
+        });
+
         form.container.add(diagram.panel);
 
         logger.log(Level.INFO, "Interface has been successfully created.");
@@ -122,10 +151,10 @@ public class FormManager {
     }
 
     public void setDisks(Set<String> disks) {
-        this.disks = disks;
         canUpdate = false;
 
         int selectedIndex = form.comboBox.getSelectedIndex();
+        this.disks = disks;
 
         form.comboBox.removeAllItems();
         for (String disk : disks) {
@@ -139,7 +168,18 @@ public class FormManager {
     }
 
     public void showInterface() {
-        frame.setVisible(true);
+        try {
+            ResultSet resultSet = database.getDisks();
+            Set<String> disks = new HashSet<>();
+
+            while (resultSet.next()) {
+                disks.add(resultSet.getString("name"));
+            }
+
+            setDisks(disks);
+        } catch (SQLException exception) {
+            logger.log(Level.SEVERE, exception.getMessage());
+        }
 
         LocalDate today = LocalDate.now();
         if (form.fromDatePicker.getDate() == null) {
@@ -152,6 +192,8 @@ public class FormManager {
 
             form.toDatePicker.setDate(YearMonth.from(today).atEndOfMonth());
         }
+
+        frame.setVisible(true);
 
         if (!canUpdate) {
             canUpdate = true;
@@ -167,61 +209,58 @@ public class FormManager {
             LocalDate fromDate = form.fromDatePicker.getDate();
             LocalDate toDate = form.toDatePicker.getDate();
             LocalDateTime from = LocalDateTime.of(
-                    fromDate != null ? fromDate : LocalDate.of(1970, 1, 1),
-                    LocalTime.of(0, 0, 0)
+                fromDate != null ? fromDate : LocalDate.of(1970, 1, 1),
+                LocalTime.of(0, 0, 0)
             );
             LocalDateTime to = LocalDateTime.of(
-                    toDate != null ? toDate : LocalDate.of(9999, 12, 31),
-                    LocalTime.of(23, 59, 59)
+                toDate != null ? toDate : LocalDate.of(9999, 12, 31),
+                LocalTime.of(23, 59, 59)
             );
             ResultSet resultSet = database.getData(
-                    disks.toArray()[form.comboBox.getSelectedIndex()].toString(),
-                    from.atZone(ZoneId.systemDefault()).toEpochSecond(),
-                    to.atZone(ZoneId.systemDefault()).toEpochSecond()
+                disks.toArray()[form.comboBox.getSelectedIndex()].toString(),
+                from.atZone(ZoneId.systemDefault()).toEpochSecond(),
+                to.atZone(ZoneId.systemDefault()).toEpochSecond()
             );
 
             try {
-                List<Long> totalList = new ArrayList<>();
-                List<Long> usedList = new ArrayList<>();
-                List<Object> marks = new ArrayList<>();
-                List<Object> labels = new ArrayList<>();
-                List<Object> points = new ArrayList<>();
+                totalList.clear();
+                usedList.clear();
+                timeLabels.clear();
+                dateLabels.clear();
+                points.clear();
 
                 while (resultSet.next()) {
                     long total = resultSet.getLong("total");
                     long usable = resultSet.getLong("usable");
+                    Date date = new Date(resultSet.getLong("timestamp") * 1000);
 
                     totalList.add(total);
                     usedList.add(total - usable);
-                    labels.add(dateFormatter.format(new Date(resultSet.getLong("timestamp") * 1000)));
+                    timeLabels.add(formatter.formatTime(date));
+                    dateLabels.add(formatter.formatDate(date));
                 }
 
                 if (totalList.size() > 0) {
                     int count = totalList.size();
-                    long maxBytes = Collections.max(totalList);
-                    double denominator = Math.pow(1024, 3);
-
-                    for (int index = 0 ; index <= 10; index++) {
-                        long piece = maxBytes / 10 * index;
-
-                        marks.add(String.format("%.0f GB", Math.floor(piece / denominator)));
-                    }
+                    maxBytes = Collections.max(totalList);
 
                     for (int index = 0; index < count; index++) {
                         points.add((double) usedList.get(index) / maxBytes);
                     }
 
-                    diagram.setMarks(marks);
-                    diagram.setLabels(labels);
+                    diagram.setLabels(dateLabels);
                     diagram.setPoints(points);
                     diagram.draw();
                 } else {
                     diagram.clear();
                 }
-
             } catch (SQLException exception) {
                 logger.log(Level.SEVERE, exception.getMessage());
             }
+
+            form.totalLabel.setText(String.format("Объем: %.0f GB", Math.floor(maxBytes / denominator)));
+            form.dateLabel.setText("Наведите на график");
+            form.usedLabel.setText("Наведите на график");
         }
     }
 

@@ -7,12 +7,25 @@ import java.awt.geom.AffineTransform;
 import java.util.*;
 import java.util.List;
 
+class DiagramRange {
+    int from;
+    int to;
+    int index;
+
+    public DiagramRange(int from, int to, int index) {
+        this.from = from;
+        this.to = to;
+        this.index = index;
+    }
+}
+
 public class Diagram {
     // region Variables
     private List<Object> marks = new ArrayList<>();
     private List<Object> labels = new ArrayList<>();
     private List<Object> points = new ArrayList<>();
     private final List<Object> keys = new ArrayList<>();
+    private final List<DiagramRange> ranges = new ArrayList<>();
     private final HashMap<Object, List<Object>> groups = new HashMap<>();
 
     private final Color[] colors = {
@@ -23,14 +36,17 @@ public class Diagram {
         new Color(227, 185, 57)
     };
 
-    private final int panelWidth = 75;
+    private final Point mousePosition = new Point();
     private double minStep = 0.0;
+    private DiagramRange currentRange = null;
     private int width = 0;
     private int height = 0;
     private int previousY = 0;
     private int totalSize = 0;
+    private int totalCount = 0;
     private int offset = 0;
     private int tempOffset = 0;
+    private boolean mousePressed = false;
     // endregion
 
     // region Canvas
@@ -42,18 +58,15 @@ public class Diagram {
             Graphics2D graphics2D = (Graphics2D) graphics;
 
             if (keys.size() > 0) {
-                width = getWidth() - panelWidth;
+                width = getWidth();
                 height = getHeight();
-
-                AffineTransform state = graphics2D.getTransform();
-                graphics2D.translate(panelWidth, 0);
 
                 setupAntialiasing(graphics2D);
                 setupFont(graphics2D);
                 clearCanvas(graphics2D);
                 prepareDraw();
 
-                minStep = Math.max(5.0, (double) width / (double) points.size());
+                minStep = Math.max(10.0, (double) width / (double) points.size());
 
                 int partsCount = keys.size();
                 for (int partIndex = 0; partIndex < partsCount; partIndex++) {
@@ -64,12 +77,12 @@ public class Diagram {
 
                 offset = Utils.clamp(Math.min(0, -totalSize + width), 0, offset);
 
+                if (!mousePressed) {
+                    drawHover(graphics2D);
+                }
+
                 drawGrid(graphics2D);
                 drawScroll(graphics2D);
-
-                graphics2D.setTransform(state);
-
-                drawMarks(graphics2D);
             } else {
                 setupAntialiasing(graphics2D);
                 clearCanvas(graphics2D);
@@ -92,6 +105,7 @@ public class Diagram {
 
                 pressed.setLocation(event.getX(), event.getY());
                 tempOffset = offset;
+                mousePressed = true;
             }
 
             @Override
@@ -100,10 +114,19 @@ public class Diagram {
 
                 pressed.setLocation(0, 0);
                 tempOffset = 0;
+                mousePressed = false;
             }
         });
 
         panel.addMouseMotionListener(new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent event) {
+                super.mouseMoved(event);
+
+                mousePosition.setLocation(event.getX(), event.getY());
+                panel.repaint();
+            }
+
             @Override
             public void mouseDragged(MouseEvent event) {
                 super.mouseDragged(event);
@@ -132,6 +155,8 @@ public class Diagram {
     private void prepareDraw() {
         previousY = 0;
         totalSize = 0;
+        totalCount = 0;
+        ranges.clear();
     }
 
     private void drawPart(Graphics2D graphics2D, Object key) {
@@ -146,6 +171,8 @@ public class Diagram {
 
         // Draw diagram
         if (needDraw) {
+            int previousVertex = 0;
+
             Polygon polygon = new Polygon();
             polygon.addPoint(offset, height);
             for (int index = 0; index < count; index++) {
@@ -155,8 +182,25 @@ public class Diagram {
 
                 polygon.addPoint(x, previousY != 0 && index == 0 ? previousY : y);
 
+                if (index >= 1) {
+                    if (index == 1) {
+                        previousVertex = polygon.xpoints[polygon.npoints - 2];
+                    }
+                    int currentVertex = polygon.xpoints[polygon.npoints - 1];
+                    int difference = currentVertex - previousVertex;
+
+                    if (index == 1) {
+                        ranges.add(new DiagramRange(totalSize + previousVertex, totalSize + currentVertex - difference / 2, totalCount + index));
+                    } else {
+                        ranges.add(new DiagramRange(totalSize + previousVertex - difference / 2, totalSize + currentVertex - difference / 2, totalCount + index));
+                    }
+
+                    previousVertex = currentVertex;
+                }
+
                 if (index == count - 1) {
                     polygon.addPoint(size + offset, y);
+                    ranges.add(new DiagramRange(totalSize + previousVertex, totalSize + polygon.xpoints[polygon.npoints - 1], totalCount + index));
 
                     tempPreviousY = y;
                 }
@@ -182,25 +226,19 @@ public class Diagram {
         }
 
         totalSize += size;
+        totalCount += count;
     }
 
-    private void drawMarks(Graphics2D graphics2D) {
-        graphics2D.setColor(new Color(255, 255, 255));
-        graphics2D.fillRect(0, 0, panelWidth, height);
+    private void drawHover(Graphics2D graphics2D) {
+        graphics2D.setColor(new Color(0, 0, 0, 51));
+        for (DiagramRange range : ranges) {
+            if (range.from  <= mousePosition.getX() && range.to >= mousePosition.getX()) {
+                currentRange = range;
 
-        graphics2D.setColor(new Color(17, 17, 17));
-        graphics2D.fillRect(panelWidth - 2, 0, 2, height);
+                graphics2D.fillRect(range.from, 0, range.to - range.from, height);
 
-        FontMetrics metrics = graphics2D.getFontMetrics(graphics2D.getFont());
-        int count = marks.size();
-        int lineHeight = metrics.getHeight();
-
-        for (int index = 0; index < count; index++) {
-            Object mark = marks.get(index);
-            int x = 10;
-            int y = height - ((height - lineHeight / 2) * (index + 1) / count) + lineHeight / 2;
-
-            graphics2D.drawString(mark.toString(), x, y);
+                break;
+            }
         }
     }
 
@@ -235,16 +273,20 @@ public class Diagram {
     // endregion
 
     // region Public methods
-    public void setMarks(List<Object> marks) {
-        this.marks = marks;
-    }
-
     public void setLabels(List<Object> labels) {
         this.labels = labels;
     }
 
     public void setPoints(List<Object> points) {
         this.points = points;
+    }
+
+    public int getPointIndex() {
+        if (this.currentRange != null) {
+            return this.currentRange.index - 1;
+        } else {
+            return -1;
+        }
     }
 
     public void draw() {

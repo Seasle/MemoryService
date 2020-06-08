@@ -45,6 +45,30 @@ public class Database {
         }
     }
 
+    public ResultSet getDisks() {
+        if (this.connection != null) {
+            String query = "SELECT DISTINCT name FROM statistics";
+
+            try {
+                Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery(query);
+                statement.closeOnCompletion();
+
+                logger.log(Level.INFO, String.format("Data has been extracted successfully. Query: `%s`", query));
+
+                return resultSet;
+            } catch (SQLException exception) {
+                logger.log(Level.SEVERE, exception.getMessage());
+
+                return null;
+            }
+        } else {
+            logger.log(Level.WARNING, "Data cannot be get, because connection hasn't been opened.");
+
+            return null;
+        }
+    }
+
     public void putData(DiskInfo info) {
         if (this.connection != null) {
             Instant timestamp = Instant.now();

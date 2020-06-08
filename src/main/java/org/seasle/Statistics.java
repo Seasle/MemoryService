@@ -7,7 +7,7 @@ import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
 public class Statistics {
-    private final HashMap<String, DiskInfo> disks = new HashMap<String, DiskInfo>();
+    private final HashMap<String, DiskInfo> disks = new HashMap<>();
 
     public Statistics() {
         Pattern pattern = Pattern.compile("(\\w)*+");
