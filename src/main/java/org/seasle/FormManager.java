@@ -54,6 +54,17 @@ public class FormManager {
             );
             TrayIcon trayIcon = new TrayIcon(icon.getImage());
 
+            trayIcon.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent event) {
+                    super.mouseClicked(event);
+
+                    if (SwingUtilities.isLeftMouseButton(event)) {
+                        showInterface();
+                    }
+                }
+            });
+
             PopupMenu popupMenu = new PopupMenu();
             MenuItem openItem = new MenuItem("Открыть");
             MenuItem exitItem = new MenuItem("Выход");
