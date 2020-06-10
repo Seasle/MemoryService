@@ -34,7 +34,7 @@ public class Diagram {
         new Color(227, 185, 57)
     };
 
-    private final Point mousePosition = new Point();
+    private final Point mousePosition = new Point(-1, -1);
     private double minStep = 0.0;
     private DiagramRange currentRange = null;
     private int width = 0;
@@ -44,7 +44,7 @@ public class Diagram {
     private int totalCount = 0;
     private int offset = 0;
     private int tempOffset = 0;
-    private boolean mousePressed = false;
+    private boolean canDrawSection = true;
     // endregion
 
     // region Canvas
@@ -75,8 +75,8 @@ public class Diagram {
 
                 offset = Utils.clamp(Math.min(0, -totalSize + width), 0, offset);
 
-                if (!mousePressed) {
-                    drawHover(graphics2D);
+                if (canDrawSection) {
+                    drawSection(graphics2D);
                 }
 
                 drawGrid(graphics2D);
@@ -103,7 +103,7 @@ public class Diagram {
 
                 pressed.setLocation(event.getX(), event.getY());
                 tempOffset = offset;
-                mousePressed = true;
+                canDrawSection = false;
             }
 
             @Override
@@ -112,7 +112,23 @@ public class Diagram {
 
                 pressed.setLocation(0, 0);
                 tempOffset = 0;
-                mousePressed = false;
+                canDrawSection = true;
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent event) {
+                super.mouseEntered(event);
+
+                canDrawSection = true;
+                panel.repaint();
+            }
+
+            @Override
+            public void mouseExited(MouseEvent event) {
+                super.mouseExited(event);
+
+                canDrawSection = false;
+                panel.repaint();
             }
         });
 
@@ -196,7 +212,7 @@ public class Diagram {
                     previousVertex = currentVertex;
 
                     if (index == count - 1) {
-                        previousVertex -= difference / 2;
+                        ranges.add(new DiagramRange(totalSize + previousVertex - difference / 2, totalSize + size + offset, totalCount + count - 1));
                     }
                 }
 
@@ -208,8 +224,6 @@ public class Diagram {
             }
             polygon.addPoint(size + offset, height);
             polygon.translate(totalSize, 0);
-
-            ranges.add(new DiagramRange(totalSize + previousVertex, totalSize + polygon.xpoints[polygon.npoints - 1], totalCount + count - 1));
 
             graphics2D.fillPolygon(polygon);
 
@@ -232,7 +246,7 @@ public class Diagram {
         totalCount += count;
     }
 
-    private void drawHover(Graphics2D graphics2D) {
+    private void drawSection(Graphics2D graphics2D) {
         graphics2D.setColor(new Color(0, 0, 0, 51));
         for (DiagramRange range : ranges) {
             if (range.from  <= mousePosition.getX() && range.to >= mousePosition.getX()) {

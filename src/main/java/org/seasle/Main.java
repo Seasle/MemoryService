@@ -14,8 +14,9 @@ public class Main {
     private static final Logger logger = LoggerProvider.getInstance();
     private static final Logger report = ReportProvider.getInstance();
     private static Database database = null;
-    private static GUI gui = null;
     private static HashMap<String, Object> options = null;
+    private static Thread thread = null;
+    private static GUI gui = null;
 
     public static void main(String[] args) {
         if (lockInstance("MemoryService")) {
@@ -25,7 +26,7 @@ public class Main {
             if (options != null) {
                 gui = new GUI(database, options);
 
-                Thread thread = new Thread(Main::collectStatistics);
+                thread = new Thread(Main::collectStatistics);
                 thread.start();
 
                 Runtime.getRuntime().addShutdownHook(new Thread(Main::exit));
@@ -45,6 +46,7 @@ public class Main {
 
             Set<String> disks = statistics.getDisks();
             double threshold = (double) options.get("threshold");
+            double denominator = Math.pow(1024, 3);
 
             for (String disk : disks) {
                 DiskInfo diskInfo = statistics.getDiskInfo(disk);
@@ -53,7 +55,12 @@ public class Main {
 
                 double percent = (double) diskInfo.used / (double) diskInfo.total;
                 if (percent > threshold) {
-                    report.info(String.format("На диске %s использовано %d процент (-ов)", disk, (int) (percent * 100)));
+                    report.info(String.format(
+                        "На диске %s использовано %.0f GB из %.0f GB",
+                        disk,
+                        Math.floor(diskInfo.used / denominator),
+                        Math.floor(diskInfo.total / denominator)
+                    ));
                 }
             }
 
@@ -63,9 +70,7 @@ public class Main {
 
             try {
                 Thread.sleep(Long.valueOf((int) options.get("interval")));
-            } catch (InterruptedException exception) {
-                exception.printStackTrace();
-            }
+            } catch (InterruptedException ignored) {}
         }
     }
 
@@ -99,5 +104,6 @@ public class Main {
 
     private static void exit() {
         database.close();
+        thread.interrupt();
     }
 }
