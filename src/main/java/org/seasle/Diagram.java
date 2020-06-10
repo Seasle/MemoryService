@@ -188,23 +188,22 @@ public class Diagram {
                     int difference = currentVertex - previousVertex;
 
                     if (index == 1) {
-                        ranges.add(new DiagramRange(totalSize + previousVertex, totalSize + currentVertex - difference / 2, totalCount + index));
+                        ranges.add(new DiagramRange(totalSize + previousVertex, totalSize + currentVertex - difference / 2, totalCount + index - 1));
                     } else {
-                        ranges.add(new DiagramRange(totalSize + previousVertex - difference / 2, totalSize + currentVertex - difference / 2, totalCount + index));
+                        ranges.add(new DiagramRange(totalSize + previousVertex - difference / 2, totalSize + currentVertex - difference / 2, totalCount + index - 1));
                     }
 
                     previousVertex = currentVertex;
+
+                    if (index == count - 1) {
+                        previousVertex -= difference / 2;
+                    }
                 }
 
                 if (index == count - 1) {
                     polygon.addPoint(size + offset, y);
 
-                    int currentVertex = polygon.xpoints[polygon.npoints - 1];
-                    int difference = currentVertex - previousVertex;
-                    ranges.add(new DiagramRange(totalSize + previousVertex - difference / 2, totalSize + currentVertex - difference / 2, totalCount + index));
-
                     tempPreviousY = y;
-                    previousVertex = currentVertex - difference / 2;
                 }
             }
             polygon.addPoint(size + offset, height);
@@ -287,7 +286,7 @@ public class Diagram {
 
     public int getPointIndex() {
         if (currentRange != null) {
-            return currentRange.index - 1;
+            return currentRange.index;
         } else {
             return -1;
         }
