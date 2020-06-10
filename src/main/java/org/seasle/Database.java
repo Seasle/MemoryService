@@ -3,6 +3,7 @@ package org.seasle;
 import java.sql.*;
 import java.net.URL;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -18,6 +19,57 @@ public class Database {
             logger.log(Level.INFO, "Connection has been successfully opened.");
         } catch (SQLException exception) {
             logger.log(Level.SEVERE, exception.getMessage());
+        }
+    }
+
+    public HashMap<String, Object> getOptions() {
+        if (this.connection != null) {
+            String query = "SELECT key, value FROM options";
+
+            try {
+                Statement statement = connection.createStatement();
+                ResultSet resultSet = statement.executeQuery(query);
+                statement.closeOnCompletion();
+
+                logger.log(Level.INFO, String.format("Data has been extracted successfully. Query: `%s`", query));
+
+                HashMap<String, Object> options = new HashMap<>();
+
+                while (resultSet.next()) {
+                    options.put(
+                        resultSet.getString("key"),
+                        resultSet.getObject("value")
+                    );
+                }
+
+                return options;
+            } catch (SQLException exception) {
+                logger.log(Level.SEVERE, exception.getMessage());
+
+                return null;
+            }
+        } else {
+            logger.log(Level.WARNING, "Data cannot be get, because connection hasn't been opened.");
+
+            return null;
+        }
+    }
+
+    public void saveOption(String key, Object value) {
+        if (this.connection != null) {
+            String query = String.format("UPDATE options SET value = %s WHERE key = '%s'", value, key);
+
+            try {
+                Statement statement = connection.createStatement();
+                statement.executeUpdate(query);
+                statement.closeOnCompletion();
+
+                logger.log(Level.INFO, String.format("Data has been extracted successfully. Query: `%s`", query));
+            } catch (SQLException exception) {
+                logger.log(Level.SEVERE, exception.getMessage());
+            }
+        } else {
+            logger.log(Level.WARNING, "Data cannot be get, because connection hasn't been opened.");
         }
     }
 

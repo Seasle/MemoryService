@@ -40,58 +40,11 @@ public class FormManager {
 
     // region Constructor
     public FormManager() {
-        initTray();
         initInterface();
     }
     // endregion
 
     // region Private methods
-    private void initTray() {
-        SystemTray tray = SystemTray.getSystemTray();
-        try {
-            ImageIcon icon = new ImageIcon(
-                getClass().getResource("/icon_16.png")
-            );
-            TrayIcon trayIcon = new TrayIcon(icon.getImage());
-
-            trayIcon.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent event) {
-                    super.mouseClicked(event);
-
-                    if (SwingUtilities.isLeftMouseButton(event)) {
-                        showInterface();
-                    }
-                }
-            });
-
-            PopupMenu popupMenu = new PopupMenu();
-            MenuItem openItem = new MenuItem("Открыть");
-            MenuItem exitItem = new MenuItem("Выход");
-
-            openItem.addActionListener(event -> {
-                showInterface();
-            });
-
-            exitItem.addActionListener(event -> {
-                System.exit(0);
-            });
-
-            popupMenu.add(openItem);
-            popupMenu.addSeparator();
-            popupMenu.add(exitItem);
-
-            trayIcon.setToolTip(title);
-            trayIcon.setPopupMenu(popupMenu);
-
-            tray.add(trayIcon);
-
-            logger.log(Level.INFO, "Tray icon has been successfully created.");
-        } catch (AWTException exception) {
-            logger.log(Level.WARNING, exception.getMessage());
-        }
-    }
-
     private void initInterface() {
         AtomicInteger selectedIndex = new AtomicInteger(form.comboBox.getSelectedIndex());
 
@@ -281,6 +234,10 @@ public class FormManager {
 
     public boolean isVisible() {
         return frame.isVisible();
+    }
+
+    public String getTitle() {
+        return title;
     }
     // endregion
 

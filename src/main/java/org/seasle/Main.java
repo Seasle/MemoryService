@@ -5,26 +5,35 @@ import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.channels.FileLock;
+import java.util.HashMap;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
 public class Main {
     private static final Logger logger = LoggerProvider.getInstance();
+    private static final Logger report = ReportProvider.getInstance();
     private static Database database = null;
-    private static FormManager formManager = null;
+    private static GUI gui = null;
+    private static HashMap<String, Object> options = null;
 
     public static void main(String[] args) {
         if (lockInstance("MemoryService")) {
             database = new Database("database");
-            formManager = FormManager.getInstance();
+            options = database.getOptions();
 
-            formManager.setDatabase(database);
+            if (options != null) {
+                gui = new GUI(database, options);
 
-            Thread thread = new Thread(Main::collectStatistics);
-            thread.start();
+                Thread thread = new Thread(Main::collectStatistics);
+                thread.start();
 
-            Runtime.getRuntime().addShutdownHook(new Thread(Main::exit));
+                Runtime.getRuntime().addShutdownHook(new Thread(Main::exit));
+            } else {
+                logger.log(Level.SEVERE, "Options not found.");
+
+                System.exit(1);
+            }
         } else {
             System.exit(0);
         }
@@ -35,16 +44,25 @@ public class Main {
             Statistics statistics = new Statistics();
 
             Set<String> disks = statistics.getDisks();
+            double threshold = (double) options.get("threshold");
+
             for (String disk : disks) {
+                DiskInfo diskInfo = statistics.getDiskInfo(disk);
+
                 database.putData(statistics.getDiskInfo(disk));
+
+                double percent = (double) diskInfo.used / (double) diskInfo.total;
+                if (percent > threshold) {
+                    report.info(String.format("На диске %s использовано %d процент (-ов)", disk, (int) (percent * 100)));
+                }
             }
 
-            if (formManager.isVisible()) {
-                formManager.updateInterface();
+            if (gui.formManager.isVisible()) {
+                gui.formManager.updateInterface();
             }
 
             try {
-                Thread.sleep(60 * 1000);
+                Thread.sleep(Long.valueOf((int) options.get("interval")));
             } catch (InterruptedException exception) {
                 exception.printStackTrace();
             }
