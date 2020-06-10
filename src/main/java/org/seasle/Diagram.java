@@ -127,6 +127,7 @@ public class Diagram {
             public void mouseExited(MouseEvent event) {
                 super.mouseExited(event);
 
+                currentRange = null;
                 canDrawSection = false;
                 panel.repaint();
             }

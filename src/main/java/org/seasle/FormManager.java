@@ -1,7 +1,6 @@
 package org.seasle;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -82,6 +81,16 @@ public class FormManager {
                 super.windowClosing(event);
 
                 logger.log(Level.INFO, "Interface has been closed.");
+            }
+        });
+
+        diagram.panel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseExited(MouseEvent event) {
+                super.mouseExited(event);
+
+                form.dateLabel.setText("Наведите на график");
+                form.usedLabel.setText("Наведите на график");
             }
         });
 
@@ -202,10 +211,21 @@ public class FormManager {
                     long usable = resultSet.getLong("usable");
                     Date date = new Date(resultSet.getLong("timestamp") * 1000);
 
-                    totalList.add(total);
-                    usedList.add(total - usable);
-                    timeLabels.add(formatter.formatTime(date));
-                    dateLabels.add(formatter.formatDate(date));
+//                    totalList.add(total);
+//                    usedList.add(total - usable);
+//                    timeLabels.add(formatter.formatTime(date));
+//                    dateLabels.add(formatter.formatDate(date));
+
+                    for (int index = 0; index < 200; index++) {
+                        totalList.add(total);
+                        usedList.add(Math.round(Math.random() * total));
+
+                        Date datea = new Date((1580493600l + 60 * 60 * index) * 1000);
+                        timeLabels.add(formatter.formatTime(datea));
+                        dateLabels.add(formatter.formatDate(datea));
+                    }
+
+                    break;
                 }
 
                 if (totalList.size() > 0) {
