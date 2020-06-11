@@ -8,7 +8,9 @@ public class Formatter {
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
 
-    public String formatTime(Date date) { return timeFormat.format(date); }
+    public String formatTime(Date date) {
+        return timeFormat.format(date);
+    }
 
     public String formatDate(Date date) {
         return dateFormat.format(date);
