@@ -211,21 +211,10 @@ public class FormManager {
                     long usable = resultSet.getLong("usable");
                     Date date = new Date(resultSet.getLong("timestamp") * 1000);
 
-//                    totalList.add(total);
-//                    usedList.add(total - usable);
-//                    timeLabels.add(formatter.formatTime(date));
-//                    dateLabels.add(formatter.formatDate(date));
-
-                    for (int index = 0; index < 200; index++) {
-                        totalList.add(total);
-                        usedList.add(Math.round(Math.random() * total));
-
-                        Date datea = new Date((1580493600l + 60 * 60 * index) * 1000);
-                        timeLabels.add(formatter.formatTime(datea));
-                        dateLabels.add(formatter.formatDate(datea));
-                    }
-
-                    break;
+                    totalList.add(total);
+                    usedList.add(total - usable);
+                    timeLabels.add(formatter.formatTime(date));
+                    dateLabels.add(formatter.formatDate(date));
                 }
 
                 if (totalList.size() > 0) {
