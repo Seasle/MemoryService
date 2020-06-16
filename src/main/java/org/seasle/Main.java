@@ -45,7 +45,10 @@ public class Main {
             Statistics statistics = new Statistics();
 
             Set<String> disks = statistics.getDisks();
-            double threshold = (double) options.get("threshold");
+            double threshold = 0.0;
+            try {
+                threshold = Double.parseDouble(options.get("threshold").toString());
+            } catch (Exception ignored) {};
             double denominator = Math.pow(1024, 3);
 
             for (String disk : disks) {

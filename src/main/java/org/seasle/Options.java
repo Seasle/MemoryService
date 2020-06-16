@@ -74,6 +74,11 @@ public class Options {
     }
 
     public void setThresholdValue(Object value) {
-        thresholdSlider.setValue((int) ((double) value * 100));
+        double threshold = 0.0;
+        try {
+            threshold = Double.parseDouble(value.toString());
+        } catch (Exception ignored) {};
+
+        thresholdSlider.setValue((int) (threshold * 100));
     }
 }
